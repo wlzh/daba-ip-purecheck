@@ -790,7 +790,7 @@
     <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div>
         <p style="margin:0;" x-text="t('footer')"></p>
-        <p style="margin:0;margin-top:2px;" x-text="t('poweredBy')"></p>
+        <p style="margin:0;margin-top:2px;"><span x-text="t('poweredBy')"></span> <span class="version-tag" x-text="'v' + version"></span></p>
       </div>
       <button class="lang-btn" @click="showHelp = true" x-text="lang === 'zh' ? '? 术语说明' : '? Glossary'"></button>
     </div>

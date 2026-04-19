@@ -1,5 +1,6 @@
 function app() {
   return {
+    version: '1.2.0',
     inputIp: '',
     autoIp: '',
     checking: false,

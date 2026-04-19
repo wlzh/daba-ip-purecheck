@@ -981,6 +981,17 @@ body::after {
   margin-top: 16px;
   margin-bottom: 0;
 }
+.version-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--border);
+  color: var(--primary);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  margin-left: 4px;
+  vertical-align: middle;
+}
 
 .site-footer a {
   color: var(--primary);
