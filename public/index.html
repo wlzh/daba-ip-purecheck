@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP PureCheck — IP 纯净度检测</title>
+  <meta name="description" content="全面检测 IP 质量、纯净度与安全隐私风险。支持 WebRTC/DNS 泄露检测、AI 服务可达性检测。">
+  <meta name="keywords" content="IP检测,IP纯净度,IP质量,WebRTC泄露,DNS泄露,IP类型检测">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="IP PureCheck — IP Purity Detection">
+  <meta property="og:description" content="Comprehensive IP quality, purity and security analysis">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2300d4ff'/><stop offset='100%25' stop-color='%237c3aed'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='68' font-family='sans-serif' font-size='55' font-weight='bold' fill='white' text-anchor='middle'>IP</text></svg>">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "IP PureCheck",
+    "description": "Comprehensive IP quality, purity and security analysis tool",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Web",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
+<body x-data="app()" x-init="init()">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="logo">
+        <div class="logo-icon">IP</div>
+        <span><span class="accent">Pure</span>Check</span>
+      </div>
+      <div class="header-actions">
+        <button class="lang-btn" @click="toggleLang()" x-text="lang === 'zh' ? 'EN' : '中'"></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title" x-text="t('title')"></h1>
+      <p class="hero-subtitle" x-text="t('subtitle')"></p>
+
+      <div class="ip-input-group">
+        <input
+          type="text"
+          class="ip-input"
+          x-model="inputIp"
+          :placeholder="t('enterIp')"
+          @keydown.enter="check()"
+          spellcheck="false"
+          autocomplete="off"
+        >
+        <button class="check-btn" @click="check()" :disabled="checking || !inputIp.trim()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span x-text="t('checkNow')"></span>
+        </button>
+      </div>
+
+      <div class="auto-ip-hint" x-show="autoIp && !data">
+        <span x-text="t('yourIp') + ': '"></span>
+        <a @click="inputIp = autoIp; check()" x-text="autoIp"></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  <section class="loading-section" x-show="checking" x-cloak>
+    <div class="container">
+      <div class="scan-animation"></div>
+      <div class="loading-text" x-text="t('checking') + '...'"></div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section class="dashboard" x-show="data && !checking" x-cloak>
+    <div class="container">
+      <div class="dashboard-grid slide-up">
+
+        <!-- Score Ring -->
+        <div class="score-ring-card" :class="{ loaded: scoreAnimated > 0 }">
+          <div class="score-ring-container">
+            <svg class="score-ring-svg" viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <template x-if="scoreAnimated >= 80">
+                    <stop offset="100%" stop-color="var(--success)"/>
+                  </template>
+                  <template x-if="scoreAnimated >= 50 && scoreAnimated < 80">
+                    <stop offset="100%" stop-color="var(--warning)"/>
+                  </template>
+                  <template x-if="scoreAnimated < 50">
+                    <stop offset="100%" stop-color="var(--danger)"/>
+                  </template>
+                </linearGradient>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="blur"/>
+                  <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              <circle class="score-ring-bg" cx="100" cy="100" r="85"/>
+              <circle
+                class="score-ring-fg"
+                cx="100" cy="100" r="85"
+                :stroke="getScoreColor(scoreAnimated)"
+                :stroke-dasharray="scoreCircumference"
+                :stroke-dashoffset="scoreOffset"
+                filter="url(#glow)"
+              />
+            </svg>
+            <div class="score-value">
+              <div class="score-number" :style="{ color: getScoreColor(scoreAnimated) }" x-text="scoreAnimated"></div>
+              <div class="score-max">/100</div>
+            </div>
+          </div>
+          <div class="score-label" :style="{ color: getScoreColor(scoreAnimated) }" x-text="getScoreLabel(scoreAnimated)"></div>
+          <div class="score-subtitle" x-text="t('purityScore')"></div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          <!-- IP Type -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon type">📡</div>
+              <span class="stat-card-label" x-text="t('ipType')"></span>
+            </div>
+            <div class="stat-card-value" x-text="t(data.purity.ipType)"></div>
+            <div class="stat-card-sub" x-text="data.ip"></div>
+          </div>
+
+          <!-- Location -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon location">📍</div>
+              <span class="stat-card-label" x-text="t('location')"></span>
+            </div>
+            <div class="stat-card-value" x-text="countryFlag(data.basic.countryCode) + ' ' + data.basic.country"></div>
+            <div class="stat-card-sub" x-text="data.basic.region + ', ' + data.basic.city"></div>
+          </div>
+
+          <!-- ISP -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon isp">🏢</div>
+              <span class="stat-card-label" x-text="t('isp')"></span>
+            </div>
+            <div class="stat-card-value" x-text="data.basic.isp"></div>
+            <div class="stat-card-sub" x-text="data.basic.as"></div>
+          </div>
+
+          <!-- Risk -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon risk" :style="{ background: data.purity.riskLevel === 'low' ? 'var(--glow-success)' : data.purity.riskLevel === 'medium' ? 'var(--glow-warning)' : 'var(--glow-danger)' }">
+                <span x-text="data.purity.riskLevel === 'low' ? '✅' : data.purity.riskLevel === 'medium' ? '⚠️' : '🚨'"></span>
+              </div>
+              <span class="stat-card-label" x-text="t('risk')"></span>
+            </div>
+            <div class="stat-card-value">
+              <span class="badge" :class="{
+                'badge-success': data.purity.riskLevel === 'low',
+                'badge-warning': data.purity.riskLevel === 'medium',
+                'badge-danger': data.purity.riskLevel === 'high'
+              }" x-text="t(data.purity.riskLevel)"></span>
+            </div>
+          </div>
+
+          <!-- Proxy -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon proxy">🕵️</div>
+              <span class="stat-card-label" x-text="t('isProxy')"></span>
+            </div>
+            <div class="stat-card-value">
+              <span class="badge" :class="data.purity.isProxy ? 'badge-danger' : 'badge-success'" x-text="data.purity.isProxy ? t('yes') : t('no')"></span>
+            </div>
+          </div>
+
+          <!-- Hosting -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon hosting">🖥️</div>
+              <span class="stat-card-label" x-text="t('isHosting')"></span>
+            </div>
+            <div class="stat-card-value">
+              <span class="badge" :class="data.purity.isHosting ? 'badge-danger' : 'badge-success'" x-text="data.purity.isHosting ? t('yes') : t('no')"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Detail Tabs -->
+      <div class="tab-section slide-up">
+        <div class="tab-nav">
+          <template x-for="tab in tabs" :key="tab.id">
+            <button
+              class="tab-btn"
+              :class="{ active: activeTab === tab.id }"
+              @click="activeTab = tab.id"
+            >
+              <span class="tab-icon" x-text="tab.icon"></span>
+              <span x-text="t('tab' + tab.id.charAt(0).toUpperCase() + tab.id.slice(1))"></span>
+            </button>
+          </template>
+        </div>
+
+        <!-- Basic Info Tab -->
+        <div class="tab-panel" x-show="activeTab === 'basic'" x-transition>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-key" x-text="t('country')"></span>
+              <span class="info-value" x-text="countryFlag(data.basic.countryCode) + ' ' + data.basic.country"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('region')"></span>
+              <span class="info-value" x-text="data.basic.region"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('city')"></span>
+              <span class="info-value" x-text="data.basic.city || '—'"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('zip')"></span>
+              <span class="info-value" x-text="data.basic.zip || '—'"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('coordinates')"></span>
+              <span class="info-value" x-text="data.basic.lat + ', ' + data.basic.lon"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('timezone')"></span>
+              <span class="info-value" x-text="data.basic.timezone"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('isp')"></span>
+              <span class="info-value" x-text="data.basic.isp"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('organization')"></span>
+              <span class="info-value" x-text="data.basic.org"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('asNumber')"></span>
+              <span class="info-value" x-text="data.basic.as"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('ipType')"></span>
+              <span class="info-value">
+                <span class="badge" :class="{
+                  'badge-success': data.purity.ipType === 'residential',
+                  'badge-danger': data.purity.ipType === 'datacenter',
+                  'badge-warning': data.purity.ipType === 'proxy' || data.purity.ipType === 'mobile'
+                }" x-text="t(data.purity.ipType)"></span>
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-key">CF PoP</span>
+              <span class="info-value" x-text="data.cf.colo || '—'"></span>
+            </div>
+            <div class="info-item">
+              <span class="info-key" x-text="t('ipType') + ' Flags'"></span>
+              <span class="info-value" style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span class="badge badge-neutral" x-show="data.purity.isMobile">📱 Mobile</span>
+                <span class="badge badge-neutral" x-show="data.purity.isProxy">🔀 Proxy</span>
+                <span class="badge badge-neutral" x-show="data.purity.isHosting">🖥️ Hosting</span>
+                <span class="badge badge-success" x-show="!data.purity.isMobile && !data.purity.isProxy && !data.purity.isHosting">🏠 Clean</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Purity Tab -->
+        <div class="tab-panel" x-show="activeTab === 'purity'" x-transition>
+          <div class="check-list">
+            <div class="check-item">
+              <div class="check-item-left">
+                <div class="check-item-icon" :style="{ background: data.purity.isProxy ? 'var(--glow-danger)' : 'var(--glow-success)' }">
+                  <span x-text="data.purity.isProxy ? '🕵️' : '✅'"></span>
+                </div>
+                <div class="check-item-info">
+                  <h4 x-text="t('isProxy')"></h4>
+                  <p x-text="data.purity.isProxy ? (lang === 'zh' ? '检测到代理服务器' : 'Proxy server detected') : (lang === 'zh' ? '未检测到代理' : 'No proxy detected')"></p>
+                </div>
+              </div>
+              <span class="badge" :class="data.purity.isProxy ? 'badge-danger' : 'badge-success'" x-text="data.purity.isProxy ? t('yes') : t('no')"></span>
+            </div>
+
+            <div class="check-item">
+              <div class="check-item-left">
+                <div class="check-item-icon" :style="{ background: data.purity.isHosting ? 'var(--glow-danger)' : 'var(--glow-success)' }">
+                  <span x-text="data.purity.isHosting ? '🖥️' : '✅'"></span>
+                </div>
+                <div class="check-item-info">
+                  <h4 x-text="t('isHosting')"></h4>
+                  <p x-text="data.purity.isHosting ? (lang === 'zh' ? 'IP 属于数据中心/云服务商' : 'IP belongs to datacenter/cloud provider') : (lang === 'zh' ? '非数据中心 IP' : 'Not a datacenter IP')"></p>
+                </div>
+              </div>
+              <span class="badge" :class="data.purity.isHosting ? 'badge-danger' : 'badge-success'" x-text="data.purity.isHosting ? t('yes') : t('no')"></span>
+            </div>
+
+            <div class="check-item">
+              <div class="check-item-left">
+                <div class="check-item-icon" :style="{ background: data.purity.isMobile ? 'var(--glow-warning)' : 'var(--glow-success)' }">
+                  <span x-text="data.purity.isMobile ? '📱' : '✅'"></span>
+                </div>
+                <div class="check-item-info">
+                  <h4 x-text="t('isMobile')"></h4>
+                  <p x-text="data.purity.isMobile ? (lang === 'zh' ? '移动网络连接' : 'Mobile network connection') : (lang === 'zh' ? '非移动网络' : 'Not a mobile network')"></p>
+                </div>
+              </div>
+              <span class="badge" :class="data.purity.isMobile ? 'badge-warning' : 'badge-success'" x-text="data.purity.isMobile ? t('yes') : t('no')"></span>
+            </div>
+          </div>
+
+          <!-- Score Breakdown -->
+          <div class="score-breakdown">
+            <h4 x-text="t('scoreBreakdown')"></h4>
+            <div class="breakdown-item">
+              <span class="breakdown-label" x-text="t('baseScore')"></span>
+              <span class="breakdown-value positive">100</span>
+            </div>
+            <template x-for="penalty in data.purity.penalties" :key="penalty.key">
+              <div class="breakdown-item">
+                <span class="breakdown-label" x-text="t(penalty.key === 'proxy' ? 'isProxy' : penalty.key === 'hosting' ? 'isHosting' : 'isMobile')"></span>
+                <span class="breakdown-value negative" x-text="penalty.points"></span>
+              </div>
+            </template>
+            <div class="breakdown-item" style="border-top: 2px solid var(--border);padding-top:14px;margin-top:4px;">
+              <span class="breakdown-label" style="font-weight:600;color:var(--text);" x-text="t('overallScore')"></span>
+              <span class="breakdown-value" :class="data.purity.score >= 80 ? 'positive' : data.purity.score >= 50 ? '' : 'negative'" :style="data.purity.score >= 50 && data.purity.score < 80 ? 'color:var(--warning)' : ''" x-text="data.purity.score"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leak Test Tab -->
+        <div class="tab-panel" x-show="activeTab === 'leak'" x-transition>
+
+          <!-- WebRTC -->
+          <div class="leak-section">
+            <div class="leak-header">
+              <div>
+                <h3>📡 <span x-text="t('webrtcTest')"></span></h3>
+                <p x-text="t('webrtcDesc')"></p>
+              </div>
+              <button class="leak-btn" @click="checkWebRTC()" :disabled="webrtcChecking" x-text="webrtcChecking ? t('testing') : t('startTest')"></button>
+            </div>
+
+            <div class="leak-results" x-show="webrtcResult">
+              <!-- Status -->
+              <div class="check-item" style="margin-bottom:16px;">
+                <div class="check-item-left">
+                  <div class="check-item-icon" :style="{ background: webrtcLeakSummary?.leaked ? 'var(--glow-danger)' : 'var(--glow-success)' }">
+                    <span x-text="webrtcLeakSummary?.leaked ? '⚠️' : '✅'"></span>
+                  </div>
+                  <div class="check-item-info">
+                    <h4 x-text="t('leakStatus')"></h4>
+                    <p x-text="webrtcLeakReasonText"></p>
+                  </div>
+                </div>
+                <span class="badge" :class="webrtcLeakSummary?.leaked ? 'badge-danger' : 'badge-success'" x-text="webrtcLeakSummary?.leaked ? t('leaked') : t('noLeak')"></span>
+              </div>
+
+              <!-- Discovered IPs with comparison -->
+              <template x-if="webrtcResult && webrtcResult.allIPs && webrtcResult.allIPs.length > 0">
+                <div>
+                  <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;font-weight:600;" x-text="t('discoveredIPs')"></div>
+                  <template x-for="item in webrtcResult.allIPs" :key="item.ip">
+                    <div class="leak-result-item" style="flex-wrap:wrap;gap:6px;">
+                      <span x-text="item.ip" style="font-family:var(--font-mono);"></span>
+                      <div style="display:flex;gap:6px;align-items:center;">
+                        <span class="leak-ip-type" :class="item.type" x-text="item.type === 'local' ? t('localIP') : t('publicIP')"></span>
+                        <template x-if="item.type === 'public' && data?.ip">
+                          <span class="badge" :class="item.ip === data.ip ? 'badge-success' : 'badge-danger'" x-text="item.ip === data.ip ? (lang === 'zh' ? '与出口一致' : 'Matches exit') : (lang === 'zh' ? '与出口不同!' : 'Differs from exit!')"></span>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <div x-show="webrtcResult && webrtcResult.error" style="color:var(--danger);font-size:0.85rem;padding:8px 0;" x-text="webrtcResult?.error"></div>
+
+              <div x-show="webrtcResult && !webrtcResult.error && (!webrtcResult.allIPs || webrtcResult.allIPs.length === 0)" style="color:var(--success);font-size:0.85rem;padding:8px 0;">
+                <span x-text="lang === 'zh' ? '未发现任何 IP 泄露，WebRTC 已被正确屏蔽' : 'No IP leaks found, WebRTC is properly blocked'"></span>
+              </div>
+            </div>
+
+            <div x-show="!webrtcResult" style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.85rem;">
+              <span x-text="t('notTested')"></span>
+            </div>
+          </div>
+
+          <!-- DNS Leak -->
+          <div class="leak-section">
+            <div class="leak-header">
+              <div>
+                <h3>🔐 <span x-text="t('dnsLeakTest')"></span></h3>
+                <p x-text="t('dnsDesc')"></p>
+              </div>
+              <button class="leak-btn" @click="checkDnsLeak()" :disabled="dnsChecking" x-text="dnsChecking ? t('testing') : t('startTest')"></button>
+            </div>
+
+            <div x-show="dnsResult && !dnsResult.error" style="padding:8px 0;">
+              <!-- Consistency status -->
+              <div class="check-item" style="margin-bottom:16px;">
+                <div class="check-item-left">
+                  <div class="check-item-icon" :style="{ background: dnsResult?.consistent ? 'var(--glow-success)' : 'var(--glow-danger)' }">
+                    <span x-text="dnsResult?.consistent ? '✅' : '⚠️'"></span>
+                  </div>
+                  <div class="check-item-info">
+                    <h4 x-text="t('dnsConsistency')"></h4>
+                    <p x-text="dnsResult?.consistent ? (lang === 'zh' ? '所有出口 IP 一致，未发现泄露' : 'All exit IPs consistent, no leak detected') : (lang === 'zh' ? '检测到 IP 不一致，可能存在泄露' : 'IP inconsistency detected, possible leak')"></p>
+                  </div>
+                </div>
+                <span class="badge" :class="dnsResult?.consistent ? 'badge-success' : 'badge-danger'" x-text="dnsResult?.consistent ? t('noLeak') : t('leaked')"></span>
+              </div>
+
+              <!-- Test results -->
+              <template x-if="dnsResult?.tests">
+                <div>
+                  <template x-for="(test, idx) in dnsResult.tests" :key="idx">
+                    <div class="leak-result-item">
+                      <span x-text="test.name"></span>
+                      <div style="display:flex;gap:6px;align-items:center;">
+                        <span x-show="test.ip" class="mono" style="font-size:0.82rem;color:var(--primary);" x-text="test.ip"></span>
+                        <template x-if="test.match !== undefined">
+                          <span class="badge" :class="test.match ? 'badge-success' : 'badge-danger'" x-text="test.match ? '✓' : '✗'"></span>
+                        </template>
+                        <span class="badge" :class="test.accessible ? 'badge-success' : 'badge-warning'" x-text="test.accessible ? 'OK' : 'N/A'"></span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Main IP reference -->
+              <div class="info-item" style="margin-top:12px;">
+                <span class="info-key" x-text="t('dnsResolver')"></span>
+                <span class="info-value">
+                  <span class="badge badge-info" x-text="data.basic.isp"></span>
+                </span>
+              </div>
+            </div>
+
+            <div x-show="dnsResult?.error" style="color:var(--danger);font-size:0.85rem;padding:8px 0;" x-text="dnsResult?.error"></div>
+
+            <div x-show="!dnsResult" style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.85rem;">
+              <span x-text="t('notTested')"></span>
+            </div>
+          </div>
+
+          <!-- IPv6 Detection -->
+          <div class="leak-section">
+            <div class="leak-header">
+              <div>
+                <h3>🌐 <span x-text="t('ipv6')"></span></h3>
+                <p x-text="t('ipv6Desc')"></p>
+              </div>
+            </div>
+            <div style="padding:8px 0;">
+              <template x-if="ipv6Result && !ipv6Result.error">
+                <div>
+                  <div class="info-item" style="margin-bottom:8px;">
+                    <span class="info-key" x-text="t('ipv6Address')"></span>
+                    <span class="info-value mono" x-text="ipv6Result.address"></span>
+                  </div>
+                  <div class="info-item" style="margin-bottom:8px;">
+                    <span class="info-key" x-text="t('ipv6')"></span>
+                    <span class="info-value">
+                      <span class="badge" :class="ipv6Result.isV6 ? 'badge-info' : 'badge-neutral'" x-text="ipv6Result.isV6 ? 'IPv6' : 'IPv4'"></span>
+                    </span>
+                  </div>
+                  <template x-if="ipv6Result.isV6 && data?.ip">
+                    <div class="info-item">
+                      <span class="info-key" x-text="t('ipv6Leak')"></span>
+                      <span class="info-value">
+                        <span class="badge" :class="ipv6Result.isLeak ? 'badge-danger' : 'badge-success'" x-text="ipv6Result.isLeak ? t('leaked') : t('noLeak')"></span>
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template x-if="ipv6Result?.error">
+                <div class="info-item">
+                  <span class="info-key" x-text="t('ipv6')"></span>
+                  <span class="info-value">
+                    <span class="badge badge-neutral" x-text="t('noIpv6')"></span>
+                  </span>
+                </div>
+              </template>
+              <template x-if="!ipv6Result">
+                <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:0.85rem;">
+                  <span x-text="lang === 'zh' ? 'IPv6 检测中...' : 'Detecting IPv6...'"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- AI Services Tab -->
+        <div class="tab-panel" x-show="activeTab === 'ai'" x-transition>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <p style="color:var(--text-muted);font-size:0.85rem;margin:0;" x-text="t('aiServiceDesc')"></p>
+            <button class="leak-btn" @click="checkAllAiServices()" :disabled="aiCheckingAll" x-text="aiCheckingAll ? t('testing') : (lang === 'zh' ? '一键检测全部' : 'Check All')"></button>
+          </div>
+
+          <div class="ai-grid">
+            <!-- Claude -->
+            <div class="ai-card">
+              <div class="ai-card-icon claude">🟠</div>
+              <h4>Claude</h4>
+              <div class="ai-card-status">
+                <span class="badge" :class="getAiStatusBadge(aiResults.claude)" x-show="aiResults.claude && aiResults.claude !== 'checking'" x-text="getAiStatusLabel(aiResults.claude)"></span>
+                <span class="badge badge-neutral" x-show="!aiResults.claude" x-text="t('notTested')"></span>
+                <span class="badge badge-info" x-show="aiResults.claude === 'checking'" x-text="t('testing')"></span>
+              </div>
+              <button class="ai-check-btn" @click="checkAiService('claude')" :disabled="aiResults.claude === 'checking'" x-text="t('checkAccess')"></button>
+            </div>
+
+            <!-- ChatGPT -->
+            <div class="ai-card">
+              <div class="ai-card-icon chatgpt">🟢</div>
+              <h4>ChatGPT</h4>
+              <div class="ai-card-status">
+                <span class="badge" :class="getAiStatusBadge(aiResults.chatgpt)" x-show="aiResults.chatgpt && aiResults.chatgpt !== 'checking'" x-text="getAiStatusLabel(aiResults.chatgpt)"></span>
+                <span class="badge badge-neutral" x-show="!aiResults.chatgpt" x-text="t('notTested')"></span>
+                <span class="badge badge-info" x-show="aiResults.chatgpt === 'checking'" x-text="t('testing')"></span>
+              </div>
+              <button class="ai-check-btn" @click="checkAiService('chatgpt')" :disabled="aiResults.chatgpt === 'checking'" x-text="t('checkAccess')"></button>
+            </div>
+
+            <!-- Gemini -->
+            <div class="ai-card">
+              <div class="ai-card-icon gemini">🔵</div>
+              <h4>Gemini</h4>
+              <div class="ai-card-status">
+                <span class="badge" :class="getAiStatusBadge(aiResults.gemini)" x-show="aiResults.gemini && aiResults.gemini !== 'checking'" x-text="getAiStatusLabel(aiResults.gemini)"></span>
+                <span class="badge badge-neutral" x-show="!aiResults.gemini" x-text="t('notTested')"></span>
+                <span class="badge badge-info" x-show="aiResults.gemini === 'checking'" x-text="t('testing')"></span>
+              </div>
+              <button class="ai-check-btn" @click="checkAiService('gemini')" :disabled="aiResults.gemini === 'checking'" x-text="t('checkAccess')"></button>
+            </div>
+
+            <!-- Copilot -->
+            <div class="ai-card">
+              <div class="ai-card-icon copilot">🔷</div>
+              <h4>Copilot</h4>
+              <div class="ai-card-status">
+                <span class="badge" :class="getAiStatusBadge(aiResults.copilot)" x-show="aiResults.copilot && aiResults.copilot !== 'checking'" x-text="getAiStatusLabel(aiResults.copilot)"></span>
+                <span class="badge badge-neutral" x-show="!aiResults.copilot" x-text="t('notTested')"></span>
+                <span class="badge badge-info" x-show="aiResults.copilot === 'checking'" x-text="t('testing')"></span>
+              </div>
+              <button class="ai-check-btn" @click="checkAiService('copilot')" :disabled="aiResults.copilot === 'checking'" x-text="t('checkAccess')"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fingerprint Tab -->
+        <div class="tab-panel" x-show="activeTab === 'fingerprint'" x-transition>
+          <div class="fingerprint-grid">
+            <div class="fp-item">
+              <div class="fp-icon info">🖥️</div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('userAgent')"></div>
+                <div class="fp-value" x-text="userAgent"></div>
+              </div>
+            </div>
+
+            <div class="fp-item">
+              <div class="fp-icon info">💻</div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('platform')"></div>
+                <div class="fp-value" x-text="fpPlatform"></div>
+              </div>
+            </div>
+
+            <div class="fp-item">
+              <div class="fp-icon info">🌐</div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('screenRes')"></div>
+                <div class="fp-value" x-text="fpScreen"></div>
+              </div>
+            </div>
+
+            <div class="fp-item">
+              <div class="fp-icon info">🎨</div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('webglRenderer')"></div>
+                <div class="fp-value" x-text="fpWebGL || 'N/A'"></div>
+              </div>
+            </div>
+
+            <div class="fp-item">
+              <div class="fp-icon info">#️⃣</div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('canvasHash')"></div>
+                <div class="fp-value" x-text="'0x' + fpCanvasHash"></div>
+              </div>
+            </div>
+
+            <!-- Timezone Match -->
+            <div class="fp-item" x-show="data">
+              <div class="fp-icon" :class="checkTimezoneMatch() === false ? 'mismatch' : 'match'">
+                <span x-text="checkTimezoneMatch() === false ? '⚠️' : '✅'"></span>
+              </div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('timezoneMatch')"></div>
+                <div class="fp-value" x-text="fpTimezone + ' → ' + (data?.basic?.timezone || '?')"></div>
+                <div class="fp-status" :style="{ color: checkTimezoneMatch() === false ? 'var(--danger)' : 'var(--success)' }">
+                  <span x-text="checkTimezoneMatch() === false ? t('inconsistent') + ' — ' + t('mismatchDesc') : t('consistent') + ' — ' + t('matchDesc')"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Language Match -->
+            <div class="fp-item" x-show="data">
+              <div class="fp-icon" :class="checkLanguageMatch() === false ? 'mismatch' : 'match'">
+                <span x-text="checkLanguageMatch() === false ? '⚠️' : '✅'"></span>
+              </div>
+              <div class="fp-content">
+                <div class="fp-label" x-text="t('languageMatch')"></div>
+                <div class="fp-value" x-text="fpLanguage + ' → ' + (data?.basic?.countryCode || '?')"></div>
+                <div class="fp-status" :style="{ color: checkLanguageMatch() === false ? 'var(--danger)' : 'var(--success)' }">
+                  <span x-text="checkLanguageMatch() === false ? t('inconsistent') : t('consistent')"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Glossary / Help Panel -->
+  <div class="help-panel" x-show="showHelp" x-cloak x-transition>
+    <div class="help-overlay" @click="showHelp = false"></div>
+    <div class="help-content">
+      <div class="help-header">
+        <h2 x-text="lang === 'zh' ? '术语与检测说明' : 'Glossary & Detection Methods'"></h2>
+        <button class="help-close" @click="showHelp = false">&times;</button>
+      </div>
+      <div class="help-body">
+        <template x-if="lang === 'zh'">
+          <div class="help-list">
+            <div class="help-item">
+              <h4>IP 纯净度评分</h4>
+              <p>综合评估 IP 质量的分数（0-100）。住宅 IP 通常 100 分，数据中心 IP 因容易被识别而扣 30 分，代理 IP 扣 35 分。分数越高，IP 越适合日常使用和访问各类服务。</p>
+            </div>
+            <div class="help-item">
+              <h4>住宅 IP (Residential)</h4>
+              <p>由 ISP（运营商）分配给家庭用户的 IP 地址。这类 IP 最"纯净"，最不容易被网站识别为代理或机器人。对应 ASN 通常属于电信、联通、移动等运营商。</p>
+            </div>
+            <div class="help-item">
+              <h4>数据中心 IP (Datacenter)</h4>
+              <p>托管在云服务商或数据中心的 IP 地址（如 AWS、阿里云、Vultr 等）。网站和 AI 服务更容易识别和限制这类 IP。适合服务器使用，不适合模拟真实用户。</p>
+            </div>
+            <div class="help-item">
+              <h4>代理检测 (Proxy Detection)</h4>
+              <p>通过 ip-api.com 的数据库判断该 IP 是否被标记为代理/VPN 出口。检测依据包括：IP 是否属于已知代理服务商、端口扫描结果、网络行为模式等。</p>
+            </div>
+            <div class="help-item">
+              <h4>WebRTC 泄露</h4>
+              <p><strong>检测原理：</strong>通过浏览器 RTCPeerConnection API 向多个 STUN 服务器（Google、StunProtocol 等）发送 UDP 请求，收集 ICE 候选者中暴露的 IP 地址。<br><strong>泄露判定：</strong>如果 WebRTC 暴露了本地内网 IP（如 192.168.x.x），或暴露的公网 IP 与 VPN/代理出口 IP 不同，则判定为泄露。<br><strong>风险：</strong>即使使用了 VPN，WebRTC 可能绕过代理直接暴露真实 IP。</p>
+            </div>
+            <div class="help-item">
+              <h4>DNS 泄露</h4>
+              <p><strong>检测原理：</strong>测试 DNS-over-HTTPS (DoH) 服务的可达性，并对比 HTTP 出口 IP 与主 IP 的一致性。<br><strong>泄露判定：</strong>如果 DNS 请求绕过了 VPN/代理，直接发送到 ISP 的 DNS 服务器，则会暴露真实浏览行为。通过比较多次请求的出口 IP 是否一致来判定。<br><strong>风险：</strong>DNS 泄露不会暴露 IP 地址本身，但会暴露你访问了哪些网站。</p>
+            </div>
+            <div class="help-item">
+              <h4>IPv6 泄露</h4>
+              <p><strong>检测原理：</strong>通过 api64.ipify.org 获取 IPv6 地址，与 IPv4 出口 IP 对比。<br><strong>泄露判定：</strong>如果 IPv6 地址与主出口 IP 对应的网络不同，说明 VPN/代理没有正确处理 IPv6 流量，可能通过 IPv6 泄露真实位置。<br><strong>建议：</strong>使用 VPN 时应禁用 IPv6 或确保 IPv6 流量也被代理。</p>
+            </div>
+            <div class="help-item">
+              <h4>AI 服务可达性</h4>
+              <p><strong>检测原理：</strong>从浏览器向 Claude、ChatGPT、Gemini、Copilot 的主页发送 fetch 请求（no-cors 模式）。如果请求成功到达目标服务器，标记为"可访问"；如果网络层被阻止，标记为"受限"。<br><strong>注意：</strong>此检测仅判断网络层面的可达性，不保证服务完全可用（如可能遇到账号限制、验证码等）。部分服务可能因 CORS 策略返回"未知"。</p>
+            </div>
+            <div class="help-item">
+              <h4>浏览器指纹一致性</h4>
+              <p>对比浏览器环境信息（时区、语言）与 IP 所在地的地理位置是否匹配。<strong>时区匹配：</strong>浏览器设置的时区应与 IP 所在地区一致。<strong>语言匹配：</strong>浏览器首选语言应与 IP 所在国家的官方语言一致。不一致可能暴露你在使用代理/VPN。</p>
+            </div>
+            <div class="help-item">
+              <h4>ASN (Autonomous System Number)</h4>
+              <p>自治系统编号，标识管理一组 IP 地址块的网络组织。通过 ASN 可以判断 IP 是属于家宽运营商（如 AS4134 中国电信）还是云服务商（如 AS13335 Cloudflare）。</p>
+            </div>
+          </div>
+        </template>
+        <template x-if="lang === 'en'">
+          <div class="help-list">
+            <div class="help-item">
+              <h4>IP Purity Score</h4>
+              <p>A comprehensive quality score (0-100). Residential IPs typically score 100, datacenter IPs get -30 penalty, proxy IPs get -35. Higher scores mean better suitability for general use.</p>
+            </div>
+            <div class="help-item">
+              <h4>Residential IP</h4>
+              <p>IP addresses assigned by ISPs to home users. These are the "cleanest" IPs, least likely to be flagged as proxies or bots. ASNs typically belong to telecom operators.</p>
+            </div>
+            <div class="help-item">
+              <h4>Datacenter IP</h4>
+              <p>IPs hosted at cloud providers or data centers (AWS, Alibaba Cloud, Vultr, etc.). Easier for websites and AI services to identify and restrict. Suitable for servers, not for simulating real users.</p>
+            </div>
+            <div class="help-item">
+              <h4>Proxy Detection</h4>
+              <p>Uses ip-api.com's database to determine if the IP is flagged as a proxy/VPN exit. Detection is based on: known proxy provider ownership, port scan results, network behavior patterns.</p>
+            </div>
+            <div class="help-item">
+              <h4>WebRTC Leak</h4>
+              <p><strong>Method:</strong>Sends UDP requests to multiple STUN servers (Google, StunProtocol, etc.) via RTCPeerConnection API, collecting IP addresses from ICE candidates.<br><strong>Detection:</strong>If WebRTC exposes local network IPs (e.g. 192.168.x.x) or a public IP different from VPN/proxy exit IP, a leak is detected.<br><strong>Risk:</strong>Even with VPN, WebRTC may bypass the proxy and expose your real IP.</p>
+            </div>
+            <div class="help-item">
+              <h4>DNS Leak</h4>
+              <p><strong>Method:</strong>Tests DNS-over-HTTPS (DoH) accessibility and compares HTTP exit IP with main IP consistency.<br><strong>Detection:</strong>If DNS requests bypass VPN/proxy and go directly to ISP DNS servers, your browsing activity is exposed. Detected by comparing exit IPs across multiple requests.<br><strong>Risk:</strong>DNS leaks don't expose your IP but reveal which websites you visit.</p>
+            </div>
+            <div class="help-item">
+              <h4>IPv6 Leak</h4>
+              <p><strong>Method:</strong>Retrieves IPv6 address via api64.ipify.org and compares with IPv4 exit IP.<br><strong>Detection:</strong>If the IPv6 address belongs to a different network than the main exit IP, the VPN/proxy isn't handling IPv6 traffic correctly.<br><strong>Tip:</strong>Disable IPv6 or ensure IPv6 traffic is proxied when using VPN.</p>
+            </div>
+            <div class="help-item">
+              <h4>AI Service Accessibility</h4>
+              <p><strong>Method:</strong>Sends fetch requests (no-cors mode) from the browser to Claude, ChatGPT, Gemini, and Copilot homepages. If the request reaches the server, it's marked "accessible"; if blocked at network level, "blocked".<br><strong>Note:</strong>This only checks network-level reachability. Full usability may be limited by account restrictions, CAPTCHAs, etc.</p>
+            </div>
+            <div class="help-item">
+              <h4>Browser Fingerprint Consistency</h4>
+              <p>Compares browser environment (timezone, language) with IP geolocation. <strong>Timezone:</strong>Browser timezone should match IP location. <strong>Language:</strong>Browser language should match the country's official language. Inconsistencies may reveal proxy/VPN usage.</p>
+            </div>
+            <div class="help-item">
+              <h4>ASN (Autonomous System Number)</h4>
+              <p>Identifies the network organization managing a group of IP addresses. Helps determine if an IP belongs to a residential ISP (e.g. AS7018 AT&T) or a cloud provider (e.g. AS13335 Cloudflare).</p>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <p style="margin:0;" x-text="t('footer')"></p>
+        <p style="margin:0;margin-top:2px;" x-text="t('poweredBy')"></p>
+      </div>
+      <button class="lang-btn" @click="showHelp = true" x-text="lang === 'zh' ? '? 术语说明' : '? Glossary'"></button>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/i18n.js"></script>
+  <script src="/js/webrtc.js"></script>
+  <script src="/js/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+</body>
+</html>
