@@ -1,6 +1,6 @@
-# IP PureCheck v1.0.0
+# 大坝 IP PureCheck v1.1.0
 
-> IP 纯净度检测平台 — 全面检测 IP 质量、纯净度与安全隐私风险
+> 大坝 IP 纯净度检测平台 — 全面检测 IP 质量、纯净度与安全隐私风险
 
 ## 功能特性
 
@@ -14,7 +14,8 @@
 - **中英文双语** — 自动识别浏览器语言，一键切换
 - **暗黑科技风 UI** — 发光效果、扫描线、渐变动画
 - **术语帮助面板** — 详细解释每个检测指标的含义与检测原理
-- **SEO 优化** — JSON-LD 结构化数据、语义化 HTML
+- **SEO 优化** — JSON-LD 结构化数据、语义化 HTML、Sitemap
+- **Google AdSense** — 自动广告集成
 - **响应式设计** — 桌面 / 平板 / 手机自适应
 
 ## 技术栈
@@ -32,10 +33,12 @@
 ├── public/                  # 静态文件
 │   ├── index.html           # 主页面
 │   ├── css/theme.css        # 暗黑科技主题
-│   └── js/
-│       ├── app.js           # Alpine.js 主逻辑
-│       ├── i18n.js          # 中英文翻译
-│       └── webrtc.js        # WebRTC 泄露检测
+│   ├── js/
+│   │   ├── app.js           # Alpine.js 主逻辑
+│   │   ├── i18n.js          # 中英文翻译
+│   │   └── webrtc.js        # WebRTC 泄露检测
+│   ├── robots.txt           # 搜索引擎爬虫规则
+│   └── sitemap.xml          # 站点地图
 ├── functions/api/
 │   └── check.ts             # IP 聚合查询 API
 ├── wrangler.toml            # Cloudflare Pages 配置
@@ -65,7 +68,7 @@ npm run deploy
 npx wrangler login
 
 # 2. 创建 Pages 项目（首次）
-npx wrangler pages project create ip-purecheck
+npx wrangler pages project create daba-ip-purecheck
 
 # 3. 部署
 npm run deploy

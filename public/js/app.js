@@ -384,7 +384,7 @@ function app() {
         ctx.fillStyle = '#f60';
         ctx.fillRect(125, 1, 62, 20);
         ctx.fillStyle = '#069';
-        ctx.fillText('IP PureCheck 🛡️', 2, 15);
+        ctx.fillText('大坝 IP PureCheck 🛡️', 2, 15);
         ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
         ctx.fillText('fingerprint', 4, 35);
         const data = canvas.toDataURL();
