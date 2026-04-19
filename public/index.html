@@ -45,7 +45,7 @@
     <div class="container">
       <div class="logo">
         <div class="logo-icon">IP</div>
-        <span><span class="accent">大坝</span> IP PureCheck</span>
+        <span><span class="accent" x-text="lang === 'zh' ? '大坝' : 'Daba'"></span> IP PureCheck</span>
       </div>
       <div class="header-actions">
         <button class="lang-btn" @click="toggleLang()" x-text="lang === 'zh' ? 'EN' : '中'"></button>
