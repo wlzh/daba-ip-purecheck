@@ -5,15 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IP PureCheck — IP 纯净度检测</title>
   <meta name="description" content="全面检测 IP 质量、纯净度与安全隐私风险。支持 WebRTC/DNS 泄露检测、AI 服务可达性检测。">
-  <meta name="keywords" content="IP检测,IP纯净度,IP质量,WebRTC泄露,DNS泄露,IP类型检测">
-  <meta name="robots" content="index, follow">
-  <meta property="og:title" content="IP PureCheck — IP Purity Detection">
-  <meta property="og:description" content="Comprehensive IP quality, purity and security analysis">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="keywords" content="IP检测,IP纯净度,IP质量,WebRTC泄露,DNS泄露,IP类型检测,IP lookup,IP check,IP purity,proxy detection,WebRTC leak,DNS leak,IP geolocation,what is my IP,IP地址查询">
+  <meta property="og:title" content="IP PureCheck — IP 纯净度检测 | IP Purity Detection">
+  <meta property="og:description" content="全面检测 IP 质量、纯净度与安全隐私风险。支持 WebRTC/DNS/IPv6 泄露检测、AI 服务可达性检测。Comprehensive IP quality, purity and security analysis.">
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="IP PureCheck">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:locale:alternate" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="IP PureCheck — IP 纯净度检测">
+  <meta name="twitter:description" content="全面检测 IP 质量、纯净度与安全隐私风险。WebRTC/DNS/IPv6 泄露检测，AI 服务可达性检测。">
   <link rel="canonical" href="">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2300d4ff'/><stop offset='100%25' stop-color='%237c3aed'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='68' font-family='sans-serif' font-size='55' font-weight='bold' fill='white' text-anchor='middle'>IP</text></svg>">
@@ -22,10 +29,12 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "IP PureCheck",
-    "description": "Comprehensive IP quality, purity and security analysis tool",
+    "description": "Comprehensive IP quality, purity and security analysis tool. Detect WebRTC leaks, DNS leaks, IPv6 leaks, and AI service accessibility.",
     "applicationCategory": "UtilityApplication",
     "operatingSystem": "Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "inLanguage": ["zh-CN", "en"],
+    "featureList": ["IP Purity Score", "Proxy Detection", "WebRTC Leak Test", "DNS Leak Test", "IPv6 Detection", "AI Service Accessibility", "Browser Fingerprint Analysis"]
   }
   </script>
 </head>
@@ -43,6 +52,17 @@
       </div>
     </div>
   </header>
+
+  <!-- Ad: Header Banner -->
+  <div class="ad-container ad-header">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-2634092855285462"
+         data-ad-slot="auto"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
 
   <!-- Hero -->
   <section class="hero">
@@ -748,6 +768,17 @@
     </div>
   </div>
 
+  <!-- Ad: Footer Banner -->
+  <div class="ad-container ad-footer" x-show="data && !checking">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-2634092855285462"
+         data-ad-slot="auto"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -758,6 +789,9 @@
       <button class="lang-btn" @click="showHelp = true" x-text="lang === 'zh' ? '? 术语说明' : '? Glossary'"></button>
     </div>
   </footer>
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2634092855285462" crossorigin="anonymous"></script>
 
   <!-- Scripts -->
   <script src="/js/i18n.js"></script>

@@ -957,12 +957,29 @@ body::after {
 
 /* Footer */
 .site-footer {
-  margin-top: 40px;
   padding: 20px 0;
   border-top: 1px solid var(--border);
   text-align: center;
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+/* Ad Placements */
+.ad-container {
+  max-width: 728px;
+  margin: 12px auto;
+  min-height: 90px;
+  text-align: center;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.ad-header {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.ad-footer {
+  margin-top: 16px;
+  margin-bottom: 0;
 }
 
 .site-footer a {
